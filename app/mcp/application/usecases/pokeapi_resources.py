@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -9,6 +9,9 @@ from app.mcp.domain.exceptions import InvalidPokemonIdentifier, PokemonApiRespon
 from app.mcp.domain.interfaces.adapters.pokemon_api import PokemonApi
 
 LISTABLE = {"pokemon", "move", "ability", "item"}
+
+# Matches Context.report_progress; keeps the application layer free of MCP types.
+ProgressCallback = Callable[[float, float | None, str | None], Awaitable[None]]
 
 # Output volume caps: nested collections are bounded before reaching the LLM.
 MAX_ABILITY_POKEMON = 50
@@ -133,12 +136,18 @@ class PokeApiResourcesUseCase:
         )
         return _species(data)
 
-    async def evolution(self, pokemon: str) -> dict[str, object]:
+    async def evolution(
+        self, pokemon: str, on_progress: ProgressCallback | None = None
+    ) -> dict[str, object]:
         species = await self.species(pokemon)
+        if on_progress is not None:
+            await on_progress(1, 2, f"Fetched species data for {species['name']}")
         chain_id = species["evolution_chain_id"]
         if not chain_id:
             return {"pokemon": species["name"], "chain": None}
         data = await self._api.get_resource("evolution-chain", str(chain_id))
+        if on_progress is not None:
+            await on_progress(2, 2, "Fetched evolution chain")
         return {"pokemon": species["name"], "chain": _evolution(data)}
 
     async def encounters(self, pokemon: str) -> list[dict[str, object]]:

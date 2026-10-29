@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     pokeapi_base_url: str = "https://pokeapi.co/api/v2"
     pokeapi_timeout: float = Field(default=10.0, gt=0)
 
+    # Rate-limiting: maximum tool calls per caller per sliding window.
+    rate_limit_max_calls: int = Field(default=30, ge=1)
+    rate_limit_window_seconds: float = Field(default=60.0, gt=0)
+
 
 @lru_cache
 def get_settings() -> Settings:
