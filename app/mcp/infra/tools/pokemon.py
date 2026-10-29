@@ -48,7 +48,7 @@ def register_pokemon_tools(
     async def get_pokemon_evolution(pokemon: Identifier, ctx: Context) -> dict[str, object]:
         """Return the nested evolution chain a Pokémon belongs to."""
         logger.info("get_pokemon_evolution pokemon=%s", pokemon, extra=request_meta(ctx))
-        return await resources.evolution(pokemon)
+        return await resources.evolution(pokemon, on_progress=ctx.report_progress)
 
     @server.tool(title="Get Pokémon encounters", annotations=READ_ONLY, structured_output=True)
     @guard_output
